@@ -1,0 +1,30 @@
+# path to a directory with all packages
+storage: /verdaccio/storage/data
+# path to a directory with plugins to include
+plugins: /verdaccio/plugins
+
+auth:
+  oidc:
+    publicUrl: http://localhost:4873
+    redisUri: redis
+    issuer: https://keycloak/auth/realms/MyRealm/
+    clientId: verdaccio
+    clientSecret: '...'
+    usernameClaim: preferred_username
+
+web:
+  title: Verdaccio
+uplinks:
+packages:
+  '@*/*':
+    # scoped packages
+    access: $authenticated
+    publish: $authenticated
+  '**':
+    access: $authenticated
+    publish: $authenticated
+middlewares:
+  audit:
+    enabled: true
+logs:
+  - {type: stdout, format: pretty, level: info}

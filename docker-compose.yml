@@ -1,0 +1,19 @@
+version: '3.5'
+
+services:
+  verdaccio:
+    build: .
+    ports:
+      - '127.0.0.1:4873:4873'
+    volumes:
+      - ./config.yaml:/verdaccio/conf/config.yaml
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:5
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf

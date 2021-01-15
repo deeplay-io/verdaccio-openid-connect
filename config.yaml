@@ -4,7 +4,7 @@ storage: /verdaccio/storage/data
 plugins: /verdaccio/plugins
 
 auth:
-  oidc:
+  openid-connect:
     publicUrl: http://localhost:4873
     redisUri: redis
     issuer: https://keycloak/auth/realms/MyRealm/

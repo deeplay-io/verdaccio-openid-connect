@@ -46,7 +46,7 @@ export default class OidcPlugin
       return options.config.oidcPluginInstance;
     }
 
-    options.config.middlewares.oidc = {oidcPluginInstance: this};
+    options.config.middlewares['openid-connect'] = {oidcPluginInstance: this};
 
     this.logger = options.logger;
 

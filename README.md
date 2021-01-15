@@ -1,16 +1,16 @@
-# verdaccio-oidc
+# verdaccio-openid-connect
 
-Verdaccio authentication plugin for OpenID Connect.
+Verdaccio authentication plugin for OpenID Connect. When installed, `npm login --registry ...` command will open the browser to start login flow.
 
 ## Installation
 
-    npm i -g verdaccio-oidc
+    npm i -g verdaccio-openid-connect
 
 ## Configuration
 
 ```yaml
 auth:
-  oidc:
+  openid-connect:
     # Verdaccio public url
     publicUrl: http://localhost:4873
     # Redis hostname

@@ -12,10 +12,10 @@ RUN yarn build
 
 FROM verdaccio/verdaccio:4.10.0
 
-COPY --from=builder /opt/build/package.json /verdaccio/plugins/verdaccio-oidc/package.json
+COPY --from=builder /opt/build/package.json /verdaccio/plugins/verdaccio-openid-connect/package.json
 
 USER root
-RUN cd /verdaccio/plugins/verdaccio-oidc && env NODE_ENV=production npm i
+RUN cd /verdaccio/plugins/verdaccio-openid-connect && env NODE_ENV=production npm i
 USER verdaccio
 
-COPY --from=builder /opt/build/lib /verdaccio/plugins/verdaccio-oidc/lib
+COPY --from=builder /opt/build/lib /verdaccio/plugins/verdaccio-openid-connect/lib

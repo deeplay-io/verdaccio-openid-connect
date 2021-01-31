@@ -11,7 +11,6 @@ import {Issuer, Client, TokenSet} from 'openid-client';
 import asyncRetry = require('async-retry');
 import {Redis} from 'ioredis';
 import * as express from 'express';
-import cookieParser = require('cookie-parser');
 import {Express} from 'express';
 import {nanoid} from 'nanoid/async';
 import {createPool, Pool} from 'generic-pool';
@@ -225,7 +224,7 @@ export default class OidcPlugin
         .catch(next);
     });
 
-    app.get('/oidc/callback', cookieParser(), (req, res, next) => {
+    app.get('/oidc/callback', (req, res, next) => {
       Promise.resolve()
         .then(async () => {
           const client = await this.clientPromise;

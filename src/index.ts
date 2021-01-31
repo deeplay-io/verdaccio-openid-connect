@@ -7,7 +7,7 @@ import {
   PluginOptions,
   Logger,
 } from '@verdaccio/types';
-import {Issuer, Client, generators, TokenSet} from 'openid-client';
+import {Issuer, Client, TokenSet} from 'openid-client';
 import asyncRetry = require('async-retry');
 import {Redis} from 'ioredis';
 import * as express from 'express';
@@ -211,13 +211,8 @@ export default class OidcPlugin
         .then(async () => {
           const client = await this.clientPromise;
 
-          const codeVerifier = generators.codeVerifier();
-          const codeChallenge = generators.codeChallenge(codeVerifier);
-
           const authorizationUrl = client.authorizationUrl({
             scope: 'openid email profile',
-            code_challenge: codeChallenge,
-            code_challenge_method: 'S256',
             state: req.params.loginRequestId,
             redirect_uri: new URL(
               '/oidc/callback',
@@ -225,12 +220,7 @@ export default class OidcPlugin
             ).toString(),
           });
 
-          res
-            .cookie('code_verifier', codeVerifier, {
-              httpOnly: true,
-              secure: this.options.config.publicUrl.startsWith('https:'),
-            })
-            .redirect(authorizationUrl);
+          res.redirect(authorizationUrl);
         })
         .catch(next);
     });
@@ -240,15 +230,12 @@ export default class OidcPlugin
         .then(async () => {
           const client = await this.clientPromise;
 
-          const {code_verifier} = req.cookies;
-
           const params = client.callbackParams(req);
 
           const tokenSet = await client.callback(
             new URL('/oidc/callback', this.options.config.publicUrl).toString(),
             params,
             {
-              code_verifier,
               state: params.state,
               nonce: null!,
             },

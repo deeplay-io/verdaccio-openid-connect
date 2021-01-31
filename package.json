@@ -1,6 +1,6 @@
 {
   "name": "verdaccio-openid-connect",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "repository": "deeplay-io/verdaccio-openid-connect",
   "main": "lib/index.js",

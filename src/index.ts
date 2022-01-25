@@ -28,9 +28,8 @@ type OidcPluginConfig = {
 };
 
 export default class OidcPlugin
-  implements
-    IPluginAuth<OidcPluginConfig>,
-    IPluginMiddleware<OidcPluginConfig> {
+  implements IPluginAuth<OidcPluginConfig>, IPluginMiddleware<OidcPluginConfig>
+{
   private redis!: Redis;
   private redisPool!: Pool<Redis>;
   private clientPromise!: Promise<Client>;
@@ -92,7 +91,7 @@ export default class OidcPlugin
           client_id: options.config.clientId,
           client_secret: options.config.clientSecret,
           redirect_uris: [
-            new URL('/oidc/callback', options.config.publicUrl).toString(),
+            new URL('oidc/callback', options.config.publicUrl).toString(),
           ],
           response_types: ['code'],
         }),
@@ -192,11 +191,11 @@ export default class OidcPlugin
           res.set('Content-Type', 'application/json').end(
             JSON.stringify({
               loginUrl: new URL(
-                `/oidc/login/${loginRequestId}`,
+                `oidc/login/${loginRequestId}`,
                 this.options.config.publicUrl,
               ),
               doneUrl: new URL(
-                `/oidc/done/${loginRequestId}`,
+                `oidc/done/${loginRequestId}`,
                 this.options.config.publicUrl,
               ),
             }),
@@ -214,7 +213,7 @@ export default class OidcPlugin
             scope: 'openid email profile',
             state: req.params.loginRequestId,
             redirect_uri: new URL(
-              '/oidc/callback',
+              'oidc/callback',
               this.options.config.publicUrl,
             ).toString(),
           });
@@ -232,7 +231,7 @@ export default class OidcPlugin
           const params = client.callbackParams(req);
 
           const tokenSet = await client.callback(
-            new URL('/oidc/callback', this.options.config.publicUrl).toString(),
+            new URL('oidc/callback', this.options.config.publicUrl).toString(),
             params,
             {
               state: params.state,

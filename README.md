@@ -11,8 +11,9 @@ Verdaccio authentication plugin for OpenID Connect. When installed, `npm login -
 ```yaml
 auth:
   openid-connect:
-    # Verdaccio public url
-    publicUrl: http://localhost:4873
+    # Verdaccio public URL. If served on a subpath, make sure to include a
+    # trailing slash.
+    publicUrl: http://localhost:4873/
     # Redis hostname
     redisUri: redis
     # OpenID Connect Issuer URL

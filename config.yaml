@@ -11,6 +11,10 @@ auth:
     clientId: verdaccio
     clientSecret: '...'
     usernameClaim: preferred_username
+    
+    # optional roles claim (id_token).
+    # claim can be array or string (comma-separated)
+    rolesClaim: roles
 
 web:
   title: Verdaccio

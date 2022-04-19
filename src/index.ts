@@ -9,33 +9,38 @@ import {
 } from '@verdaccio/types';
 import {Issuer, Client, TokenSet} from 'openid-client';
 import asyncRetry = require('async-retry');
-import {Redis} from 'ioredis';
 import * as express from 'express';
 import {Express} from 'express';
 import {nanoid} from 'nanoid/async';
-import {createPool, Pool} from 'generic-pool';
 
-import {createRedis} from './redis';
 import {URL} from 'url';
+
+import { ISessionStorage, ITokenStorage } from './types';
+import { NewRedisStorage } from './redis';
+import { NewFileStorage } from './fs';
 
 type OidcPluginConfig = {
   publicUrl: string;
-  redisUri: string;
   issuer: string;
   clientId: string;
   clientSecret: string;
+  scope: string;
   usernameClaim?: string;
   rolesClaim?: string;
+
+  redisUri?: string;
+  fs_session_store_path?: string
+  fs_token_store_path?: string;
 };
 
 export default class OidcPlugin
   implements IPluginAuth<OidcPluginConfig>, IPluginMiddleware<OidcPluginConfig>
 {
-  private redis!: Redis;
-  private redisPool!: Pool<Redis>;
   private clientPromise!: Promise<Client>;
   private closed = false;
   private logger!: Logger;
+  private ss!: ISessionStorage;
+  private ts!: ITokenStorage;
 
   constructor(
     config: OidcPluginConfig & Config,
@@ -52,27 +57,17 @@ export default class OidcPlugin
 
     this.logger = options.logger;
 
-    this.redis = createRedis(options.config.redisUri);
-
-    this.redisPool = createPool<Redis>(
-      {
-        async create() {
-          const redis = createRedis(options.config.redisUri);
-          await redis.connect();
-
-          return redis;
-        },
-        async destroy(redis) {
-          await redis.quit();
-        },
-      },
-      {
-        min: 0,
-        max: 1000,
-        evictionRunIntervalMillis: 10_000,
-        acquireTimeoutMillis: 10_000,
-      },
-    );
+    if (options.config.redisUri) {
+      const rs = NewRedisStorage(options.config.redisUri);
+      this.ss = rs.ss;
+      this.ts = rs.ts;
+    } else if (options.config.fs_session_store_path && options.config.fs_token_store_path) {
+      const rs = NewFileStorage(options.config.fs_session_store_path, options.config.fs_token_store_path);
+      this.ss = rs.ss;
+      this.ts = rs.ts;
+    } else {
+      throw new Error('invalid configuration: none of [redisUri] or [fs_session_store_path, fs_token_store_path] is set');
+    }
 
     this.clientPromise = asyncRetry(
       () => Issuer.discover(options.config.issuer),
@@ -106,9 +101,8 @@ export default class OidcPlugin
 
     this.closed = true;
 
-    this.redis.quit();
-
-    this.redisPool.drain();
+    this.ss.close();
+    this.ts.close();
   }
 
   private getUsername(tokenSet: TokenSet): string {
@@ -153,11 +147,10 @@ export default class OidcPlugin
     sessionId: string,
     tokenSet: TokenSet,
   ): Promise<void> {
-    await this.redis.set(
-      `session:${sessionId}`,
-      JSON.stringify(tokenSet),
-      'EX',
-      60 * 60 * 24 * 30, // 1 month
+    await this.ss.set(
+        `session:${sessionId}`,
+        tokenSet,
+        60 * 60 * 24 * 30, // 1 month
     );
   }
 
@@ -165,14 +158,14 @@ export default class OidcPlugin
     Promise.resolve()
       .then(async () => {
         const sessionId = password;
-        const sessionStr = await this.redis.get(`session:${sessionId}`);
+        const tokenSetObj: any|null = await this.ss.tryGet(`session:${sessionId}`);
 
-        if (sessionStr == null) {
+        if (tokenSetObj == null) {
           cb(null, false);
           return;
         }
 
-        let tokenSet = new TokenSet(JSON.parse(sessionStr));
+        let tokenSet = new TokenSet(tokenSetObj);
 
         const username = this.getUsername(tokenSet);
 
@@ -235,7 +228,7 @@ export default class OidcPlugin
           const client = await this.clientPromise;
 
           const authorizationUrl = client.authorizationUrl({
-            scope: 'openid email profile',
+            scope: this.options.config.scope,
             state: req.params.loginRequestId,
             redirect_uri: new URL(
               'oidc/callback',
@@ -275,13 +268,7 @@ export default class OidcPlugin
             .aesEncrypt(Buffer.from(`${username}:${sessionId}`, 'utf8'))
             .toString('base64');
 
-          await this.redis.xadd(
-            `login:${loginRequestId}`,
-            '*',
-            'token',
-            npmToken,
-          );
-          await this.redis.expire(`login:${loginRequestId}`, 60 * 60);
+          await this.ts.set(`login:${loginRequestId}`, npmToken, 5 * 60);
 
           res.set('Content-Type', 'text/html').end(callbackResponseHtml);
         })
@@ -291,22 +278,12 @@ export default class OidcPlugin
     app.get('/oidc/done/:loginRequestId', (req, res, next) => {
       Promise.resolve()
         .then(async () => {
-          const result = await this.redisPool.use(redis =>
-            redis.xread(
-              'BLOCK',
-              10_000,
-              'STREAMS',
-              `login:${req.params.loginRequestId}`,
-              '0-0',
-            ),
-          );
+          const token = await this.ts.tryGet(`login:${req.params.loginRequestId}`, 10_000);
 
-          if (result == null || result.length === 0) {
+          if (token == null) {
             res.status(202).end(JSON.stringify({}));
             return;
           }
-
-          const token = result[0][1][0][1][1]; // omg sorry
 
           res
             .set('Content-Type', 'application/json')

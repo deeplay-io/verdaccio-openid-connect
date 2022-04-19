@@ -6,12 +6,23 @@ plugins: /verdaccio/plugins
 auth:
   openid-connect:
     publicUrl: http://localhost:4873
+    
+    ###
+    # when set redis storage (for sessions and tokens) will be used.
+    # see also: fs_session_store_path, fs_token_store_path.
     redisUri: redis
+    
+    ###
+    # file storage paths (for sessions and tokens): will be used if redisUri not set
+    #fs_session_store_path: /tmp
+    #fs_token_store_path: /tmp
+
     issuer: https://keycloak/auth/realms/MyRealm/
     clientId: verdaccio
     clientSecret: '...'
+    scope: "openid profile email offline_access"
     usernameClaim: preferred_username
-    
+
     # optional roles claim (id_token).
     # claim can be array or string (comma-separated)
     rolesClaim: roles

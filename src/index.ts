@@ -25,6 +25,7 @@ type OidcPluginConfig = {
   clientId: string;
   clientSecret: string;
   usernameClaim?: string;
+  rolesClaim?: string;
 };
 
 export default class OidcPlugin
@@ -126,6 +127,28 @@ export default class OidcPlugin
     return username;
   }
 
+  private getRoles(tokenSet: TokenSet): string[] {
+    const {rolesClaim} = this.options.config;
+    if (!rolesClaim) {
+      return [];
+    }
+
+    let roles: any = tokenSet.claims()[rolesClaim];
+    if (typeof roles === 'string') {
+      roles = roles.split(',').map((x:string) => x.trim());
+    }
+
+    if (!Array.isArray(roles)) {
+      throw new Error(
+        `Missing roles claim '${rolesClaim}'. Available claims: ${JSON.stringify(
+          Object.keys(tokenSet.claims()),
+        )}`,
+      );
+    }
+
+    return roles;
+  }
+
   private async saveSession(
     sessionId: string,
     tokenSet: TokenSet,
@@ -149,7 +172,7 @@ export default class OidcPlugin
           return;
         }
 
-        const tokenSet = new TokenSet(JSON.parse(sessionStr));
+        let tokenSet = new TokenSet(JSON.parse(sessionStr));
 
         const username = this.getUsername(tokenSet);
 
@@ -170,14 +193,16 @@ export default class OidcPlugin
 
           const client = await this.clientPromise;
 
-          const refreshedTokenSet = await client.refresh(tokenSet);
+          tokenSet = await client.refresh(tokenSet);
 
-          await this.saveSession(sessionId, refreshedTokenSet);
+          await this.saveSession(sessionId, tokenSet);
         }
+
+        const roles = this.getRoles(tokenSet);
 
         this.logger.info({username}, 'Authenticated @{username}');
 
-        cb(null, [username]);
+        cb(null, [username, ...roles]);
       })
       .catch(err => cb(err, false));
   }

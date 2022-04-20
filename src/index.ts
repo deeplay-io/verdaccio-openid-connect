@@ -270,7 +270,7 @@ export default class OidcPlugin
 
           await this.ts.set(`login:${loginRequestId}`, npmToken, 5 * 60);
 
-          res.set('Content-Type', 'text/html').end(callbackResponseHtml);
+          res.set('Content-Type', 'text/html').end(callbackResponseHtml(npmToken));
         })
         .catch(next);
     });
@@ -294,12 +294,15 @@ export default class OidcPlugin
   }
 }
 
-const callbackResponseHtml = `
+const callbackResponseHtml = (token: string)=>`
 <!DOCTYPE html>
 <html>
   <head>
   </head>
   <body>
+    <script>
+      localStorage.setItem('token', ${JSON.stringify(token)});
+    </script>
     You may close this page now.
     <script>setTimeout(function() {window.close()}, 0)</script>
   </body>

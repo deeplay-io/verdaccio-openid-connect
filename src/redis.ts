@@ -2,6 +2,7 @@ import IORedis = require('ioredis');
 import {ISessionStorage, ITokenStorage} from './types';
 import {Redis} from 'ioredis';
 import {createPool, Pool} from 'generic-pool';
+import { TokenSet } from 'openid-client';
 
 export function NewRedisStorage(redisUri: string): {
   ss: ISessionStorage;
@@ -58,14 +59,14 @@ class RedisTokenStorage implements ITokenStorage {
 
   public async set(
     key: string,
-    value: any,
+    value: string,
     expires_sec: number,
   ): Promise<void> {
     await this.redis.xadd(key, '*', 'token', value);
     await this.redis.expire(key, expires_sec);
   }
 
-  public async tryGet(key: string, timeout: number): Promise<any | null> {
+  public async get(key: string, timeout: number): Promise<string | null> {
     const result = await this.redisPool.use(redis =>
       redis.xread('BLOCK', timeout, 'STREAMS', key, '0-0'),
     );
@@ -91,13 +92,13 @@ class RedisSessionStorage implements ISessionStorage {
 
   public async set(
     key: string,
-    value: any,
+    value: TokenSet,
     expires_sec: number,
   ): Promise<void> {
     await this.redis.set(key, JSON.stringify(value), 'EX', expires_sec);
   }
 
-  public async tryGet(key: string): Promise<any | null> {
+  public async get(key: string): Promise<TokenSet | null> {
     const rawData = await this.redis.get(key);
     if (rawData == null) {
       return null;

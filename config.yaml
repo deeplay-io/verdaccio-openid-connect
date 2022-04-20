@@ -13,9 +13,9 @@ auth:
     redisUri: redis
     
     ###
-    # file storage paths (for sessions and tokens): will be used if redisUri not set
-    #fs_session_store_path: /tmp
-    #fs_token_store_path: /tmp
+    # session files (persistent) storage path and token files (temporary for short-lived files) storage path: will be used if redisUri not set
+    #fsSessionStorePath: /tmp
+    #fsTokenStorePath: /tmp
 
     issuer: https://keycloak/auth/realms/MyRealm/
     clientId: verdaccio

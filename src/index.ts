@@ -29,8 +29,8 @@ type OidcPluginConfig = {
   rolesClaim?: string;
 
   redisUri?: string;
-  fs_session_store_path?: string
-  fs_token_store_path?: string;
+  fsSessionStorePath?: string
+  fsTokenStorePath?: string;
 };
 
 export default class OidcPlugin
@@ -61,8 +61,8 @@ export default class OidcPlugin
       const rs = NewRedisStorage(options.config.redisUri);
       this.ss = rs.ss;
       this.ts = rs.ts;
-    } else if (options.config.fs_session_store_path && options.config.fs_token_store_path) {
-      const rs = NewFileStorage(options.config.fs_session_store_path, options.config.fs_token_store_path);
+    } else if (options.config.fsSessionStorePath && options.config.fsTokenStorePath) {
+      const rs = NewFileStorage(this.logger, options.config.fsSessionStorePath, options.config.fsTokenStorePath);
       this.ss = rs.ss;
       this.ts = rs.ts;
     } else {
@@ -158,7 +158,7 @@ export default class OidcPlugin
     Promise.resolve()
       .then(async () => {
         const sessionId = password;
-        const tokenSetObj: any|null = await this.ss.tryGet(`session:${sessionId}`);
+        const tokenSetObj: any|null = await this.ss.get(`session:${sessionId}`);
 
         if (tokenSetObj == null) {
           cb(null, false);
@@ -228,7 +228,7 @@ export default class OidcPlugin
           const client = await this.clientPromise;
 
           const authorizationUrl = client.authorizationUrl({
-            scope: this.options.config.scope,
+            scope: this.options.config.scope || 'openid email profile',
             state: req.params.loginRequestId,
             redirect_uri: new URL(
               'oidc/callback',
@@ -278,7 +278,7 @@ export default class OidcPlugin
     app.get('/oidc/done/:loginRequestId', (req, res, next) => {
       Promise.resolve()
         .then(async () => {
-          const token = await this.ts.tryGet(`login:${req.params.loginRequestId}`, 10_000);
+          const token = await this.ts.get(`login:${req.params.loginRequestId}`, 10_000);
 
           if (token == null) {
             res.status(202).end(JSON.stringify({}));

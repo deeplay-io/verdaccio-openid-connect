@@ -95,8 +95,7 @@ class FileSessionStorage implements ISessionStorage {
   constructor(private path: string, private fnClose: () => Promise<void>) {}
 
   public async close(): Promise<void> {
-    this.fnClose();
-    return Promise.resolve();
+    return this.fnClose();
   }
 
   public async set(
@@ -132,8 +131,7 @@ class FileTokenStorage implements ITokenStorage {
   constructor(private path: string, private fnClose: () => Promise<void>) {}
 
   public close(): Promise<void> {
-    this.fnClose();
-    return Promise.resolve();
+    return this.fnClose();
   }
 
   public async set(

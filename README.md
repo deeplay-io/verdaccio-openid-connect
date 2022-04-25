@@ -15,13 +15,20 @@ auth:
     # trailing slash.
     publicUrl: http://localhost:4873/
     # Redis hostname
+    # When set redis storage (for sessions and tokens) will be used.
+    # see also: fsSessionStorePath, fsTokenStorePath.
     redisUri: redis
+    # Session files (persistent) storage path and token files (temporary for short-lived files) storage path: will be used if redisUri not set
+    #fsSessionStorePath: /tmp
+    #fsTokenStorePath: /tmp
     # OpenID Connect Issuer URL
     issuer: https://keycloak/auth/realms/MyRealm/
     # OpenID Connect Client ID
     clientId: verdaccio
     # OpenID Connect Client Secret
     clientSecret: '...'
+    # OpenID Connect Scopes
+    scope: openid profile email offline_access
     # Optional id_token claim that will be used for username
     usernameClaim: preferred_username
 ```

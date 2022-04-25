@@ -66,7 +66,7 @@ export default class OidcPlugin
       this.ss = rs.ss;
       this.ts = rs.ts;
     } else {
-      throw new Error('invalid configuration: none of [redisUri] or [fs_session_store_path, fs_token_store_path] is set');
+      throw new Error('invalid configuration: none of [redisUri] or [fsSessionStorePath, fsTokenStorePath] is set');
     }
 
     this.clientPromise = asyncRetry(

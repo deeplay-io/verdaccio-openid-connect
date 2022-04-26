@@ -29,7 +29,25 @@ auth:
 
 web:
   title: Verdaccio
+
 uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+
+## uncomment to use modern jwt token system ( https://verdaccio.org/docs/configuration/#security )
+#
+# security:
+#   api:
+#     jwt:
+#       sign:
+#         # lifetime for [cli-to-verdaccio service] jwt tokens that link to oidc server tokens (using sid claim).
+#         # oidc server tokens lifetime (set by oidc server) check as usual after check [cli-to-verdaccio service] jwt token sign and expiration.
+#         # if oidc server returns refresh_token, oidc access_token will refresh when expired.
+#         expiresIn: 30d
+#   web:
+#     sign:
+#       expiresIn: 7d
+
 packages:
   '@*/*':
     # scoped packages
@@ -38,6 +56,7 @@ packages:
   '**':
     access: $authenticated
     publish: $authenticated
+
 middlewares:
   audit:
     enabled: true

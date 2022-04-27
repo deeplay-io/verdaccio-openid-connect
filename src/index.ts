@@ -14,7 +14,7 @@ import asyncRetry = require('async-retry');
 import * as express from 'express';
 import {Express} from 'express';
 import {nanoid} from 'nanoid/async';
-import * as ms from 'ms';
+import ms = require('ms');
 import * as jwt from 'jsonwebtoken';
 import {URL} from 'url';
 

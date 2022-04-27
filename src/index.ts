@@ -92,7 +92,7 @@ export default class OidcPlugin
           {pluginName: this.pluginName},
           '@{pluginName} in legacy mode',
         );
-        this.sessionTtl = 60 * 60 * 24 * 30; //1 month
+        this.sessionTtl = ms('30d');
         this.webSessionTtl = this.sessionTtl;
         break;
       case PluginMode.JWT:

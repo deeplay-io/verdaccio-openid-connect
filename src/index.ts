@@ -542,8 +542,8 @@ function signPayload(
     notBefore: '1', // Make sure the time will not rollback :)
     ...options,
   };
-  return new Promise(function (resolve, reject): Promise<string> {
-    return jwt.sign(
+  return new Promise(function (resolve, reject) {
+    jwt.sign(
       payload,
       secretOrPrivateKey,
       opts,

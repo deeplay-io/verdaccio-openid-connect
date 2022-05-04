@@ -92,6 +92,7 @@ export default class OidcPlugin
           {pluginName: this.pluginName},
           '@{pluginName} in legacy mode',
         );
+        this.apiJWTmiddleware = undefined;
         this.sessionTtl = ms('30d');
         this.webSessionTtl = this.sessionTtl;
         break;
@@ -100,7 +101,7 @@ export default class OidcPlugin
           {pluginName: this.pluginName},
           '@{pluginName} in jwt mode',
         );
-
+        this.apiJWTmiddleware = this._apiJWTmiddleware;
         const sessionTtl =
           options.config.security?.api?.jwt?.sign?.expiresIn || '1h';
         this.sessionTtl = Number.isNaN(+sessionTtl)
@@ -164,7 +165,7 @@ export default class OidcPlugin
     );
   }
 
-  close() {
+  public close() {
     if (this.closed) {
       return;
     }
@@ -221,7 +222,7 @@ export default class OidcPlugin
     await this.ss.set(`session:${sessionId}`, tokenSet, this.sessionTtl);
   }
 
-  authenticate(user: string, password: string, cb: AuthCallback): void {
+  public authenticate(user: string, password: string, cb: AuthCallback): void {
     Promise.resolve()
       .then(async () => {
         const sessionId = password;
@@ -269,7 +270,9 @@ export default class OidcPlugin
       .catch(err => cb(err, false));
   }
 
-  apiJWTmiddleware(helpers: any): any {
+  public apiJWTmiddleware?: (helpers: any)=>any;
+
+  private _apiJWTmiddleware(helpers: any): any {
     return (
       req: express.Request & {remote_user: RemoteUserEx},
       res: express.Response,
@@ -391,7 +394,7 @@ export default class OidcPlugin
     };
   }
 
-  register_middlewares(app: Express, auth: IBasicAuth<OidcPluginConfig>): void {
+  public register_middlewares(app: Express, auth: IBasicAuth<OidcPluginConfig>): void {
     app.post('/-/v1/login', express.json(), (req, res, next) => {
       Promise.resolve()
         .then(async () => {

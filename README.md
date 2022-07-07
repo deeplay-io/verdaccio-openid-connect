@@ -2,6 +2,8 @@
 
 Verdaccio authentication plugin for OpenID Connect. When installed, `npm login --registry ...` command will open the browser to start login flow.
 
+Compatible with Verdaccio 4.x and 5.x.
+
 ## Installation
 
     npm i -g verdaccio-openid-connect

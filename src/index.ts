@@ -58,7 +58,6 @@ export default class OidcPlugin
   private ts!: ITokenStorage;
   private mode!: PluginMode;
   private sessionTtl!: number;
-  private webSessionTtl!: number;
 
   constructor(
     config: OidcPluginConfig & Config,
@@ -94,7 +93,7 @@ export default class OidcPlugin
         );
         this.apiJWTmiddleware = undefined;
         this.sessionTtl = ms('30d');
-        this.webSessionTtl = this.sessionTtl;
+
         break;
       case PluginMode.JWT:
         this.logger.trace(
@@ -102,17 +101,15 @@ export default class OidcPlugin
           '@{pluginName} in jwt mode',
         );
         this.apiJWTmiddleware = this._apiJWTmiddleware;
+        const sessionExpiresIn =
+          options.config.security?.api?.jwt?.sign?.expiresIn;
         const sessionTtl =
-          options.config.security?.api?.jwt?.sign?.expiresIn || '1h';
+          sessionExpiresIn == null || sessionExpiresIn === 'never'
+            ? '30d'
+            : sessionExpiresIn;
         this.sessionTtl = Number.isNaN(+sessionTtl)
           ? ms(sessionTtl)
           : +sessionTtl;
-
-        const webSessionTtl =
-          options.config.security?.web?.sign?.expiresIn || '1h';
-        this.webSessionTtl = Number.isNaN(+webSessionTtl)
-          ? ms(webSessionTtl)
-          : +webSessionTtl;
 
         break;
       default:
@@ -270,7 +267,7 @@ export default class OidcPlugin
       .catch(err => cb(err, false));
   }
 
-  public apiJWTmiddleware?: (helpers: any)=>any;
+  public apiJWTmiddleware?: (helpers: any) => any;
 
   private _apiJWTmiddleware(helpers: any): any {
     return (
@@ -394,7 +391,10 @@ export default class OidcPlugin
     };
   }
 
-  public register_middlewares(app: Express, auth: IBasicAuth<OidcPluginConfig>): void {
+  public register_middlewares(
+    app: Express,
+    auth: IBasicAuth<OidcPluginConfig>,
+  ): void {
     app.post('/-/v1/login', express.json(), (req, res, next) => {
       Promise.resolve()
         .then(async () => {
@@ -475,11 +475,15 @@ export default class OidcPlugin
               };
 
               npmToken = await signPayload(rUser, auth.config.secret, {
-                expiresIn: '' + this.sessionTtl,
+                expiresIn:
+                  this.options.config.security?.api?.jwt?.sign?.expiresIn,
               });
 
               webToken = await signPayload(rUser, auth.config.secret, {
-                expiresIn: '' + this.webSessionTtl,
+                // default expiration for web tokens is 7 days:
+                // https://github.com/verdaccio/verdaccio/blob/64f0921477ef68fc96a2327c7a3c86a45f6d0255/packages/config/src/security.ts#L5-L11
+                expiresIn:
+                  this.options.config.security?.web?.sign?.expiresIn ?? '7d',
               });
               break;
             default:
@@ -546,11 +550,8 @@ function signPayload(
     ...options,
   };
   return new Promise(function (resolve, reject) {
-    jwt.sign(
-      payload,
-      secretOrPrivateKey,
-      opts,
-      (error: any, token: any) => (error ? reject(error) : resolve(token)),
+    jwt.sign(payload, secretOrPrivateKey, opts, (error: any, token: any) =>
+      error ? reject(error) : resolve(token),
     );
   });
 }

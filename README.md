@@ -33,6 +33,12 @@ auth:
     scope: openid profile email offline_access
     # Optional id_token claim that will be used for username
     usernameClaim: preferred_username
+    # Optional switch to alternative login method, using access token as password.
+    # The username must be the same as the one used to acquire the access token,
+    # the password must be an OIDC access token. The e-mail address will
+    # be ignored.
+    # If not set, the regular authentication flow will be used.
+    accessTokenAuth: false
 ```
 
 OpenID Connect Client must be configured to allow `${publicUrl}/oidc/callback`

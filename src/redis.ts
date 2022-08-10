@@ -2,7 +2,7 @@ import IORedis = require('ioredis');
 import {ISessionStorage, ITokenStorage} from './types';
 import {Redis} from 'ioredis';
 import {createPool, Pool} from 'generic-pool';
-import { TokenSet } from 'openid-client';
+import {TokenSet} from 'openid-client';
 
 export function NewRedisStorage(redisUri: string): {
   ss: ISessionStorage;

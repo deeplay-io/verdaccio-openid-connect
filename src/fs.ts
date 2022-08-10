@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import {ISessionStorage, ITokenStorage} from './types';
 import {Logger} from '@verdaccio/types';
-import { TokenSet } from 'openid-client';
+import {TokenSet} from 'openid-client';
 
 const TOKEN_FILE_EXT = '.token';
 const SESSION_FILE_EXT = '.session';

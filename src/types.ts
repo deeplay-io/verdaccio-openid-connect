@@ -1,4 +1,4 @@
-import { TokenSet } from "openid-client";
+import {TokenSet} from 'openid-client';
 
 export interface ISessionStorage {
   close(): Promise<void>;

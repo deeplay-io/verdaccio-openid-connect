@@ -1,6 +1,7 @@
 # verdaccio-openid-connect
 
-Verdaccio authentication plugin for OpenID Connect. When installed, `npm login --registry ...` command will open the browser to start login flow.
+Verdaccio authentication plugin for OpenID Connect. When installed,
+`npm login --registry ...` command will open the browser to start login flow.
 
 Compatible with Verdaccio 4.x and 5.x.
 
@@ -35,8 +36,7 @@ auth:
     usernameClaim: preferred_username
     # Optional switch to alternative login method, using access token as password.
     # The username must be the same as the one used to acquire the access token,
-    # the password must be an OIDC access token. The e-mail address will
-    # be ignored.
+    # the password must be an OIDC access token. The e-mail address will be ignored.
     # If not set, the regular authentication flow will be used.
     accessTokenAuth: false
 ```

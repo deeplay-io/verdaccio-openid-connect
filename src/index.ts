@@ -12,10 +12,7 @@ import {
 import {Issuer, Client, TokenSet} from 'openid-client';
 import asyncRetry = require('async-retry');
 import * as express from 'express';
-import {
-  Express, 
-  Response
-} from 'express';
+import {Express, Response} from 'express';
 import {nanoid} from 'nanoid/async';
 import ms = require('ms');
 import * as jwt from 'jsonwebtoken';
@@ -37,7 +34,7 @@ type OidcPluginConfig = {
   redisUri?: string;
   fsSessionStorePath?: string;
   fsTokenStorePath?: string;
-  
+
   accessTokenAuth?: boolean;
 };
 
@@ -405,17 +402,19 @@ export default class OidcPlugin
     app: Express,
     auth: IBasicAuth<OidcPluginConfig>,
   ): void {
-
-    app.put('/-/user/org.couchdb.user::userId', express.json(), (req, res, next) => {
+    app.put(
+      '/-/user/org.couchdb.user::userId',
+      express.json(),
+      (req, res, next) => {
         Promise.resolve()
           .then(async () => {
             const subjectToken = req.body.password;
-            if(!subjectToken) {
+            if (!subjectToken) {
               this.unauthorized(res, 'Password attribute is missing.');
               return;
             }
             const userName = req.body.name;
-            if(userName !== req.params.userId) {
+            if (userName !== req.params.userId) {
               this.unauthorized(res, 'User ID in URL and body do not match.');
               return;
             }
@@ -423,53 +422,61 @@ export default class OidcPlugin
             const clientId = this.options.config.clientId;
             const client = await this.clientPromise;
             let tokenSet = await client.grant({
-                   "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange", 
-                   "requested_token_type ":"urn:ietf:params:oauth:token-type:refresh_token", 
-                   "client_secret": clientSecret, 
-                   "client_id": clientId,
-                   "subject_token": subjectToken,
-                   "subject_token_type": "urn:ietf:params:oauth:token-type:access_token",
-                   "scope": this.options.config.scope
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              'requested_token_type ':
+                'urn:ietf:params:oauth:token-type:refresh_token',
+              client_secret: clientSecret,
+              client_id: clientId,
+              subject_token: subjectToken,
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              scope: this.options.config.scope,
             });
 
             const tokenUsername = this.getUsername(tokenSet);
-            if(userName !== tokenUsername) {
-              this.unauthorized(res, 'Access token is not issued for the user trying to log in.');
+            if (userName !== tokenUsername) {
+              this.unauthorized(
+                res,
+                'Access token is not issued for the user trying to log in.',
+              );
               return;
             }
 
             const sessionId = await nanoid();
-            const {npmToken} = await this.saveSessionAndCreateTokens(sessionId, tokenSet, auth);
-            const responseBody = JSON.stringify({"token" : npmToken});
+            const {npmToken} = await this.saveSessionAndCreateTokens(
+              sessionId,
+              tokenSet,
+              auth,
+            );
+            const responseBody = JSON.stringify({token: npmToken});
             res.status(201);
-            res
-              .set('Content-Type', 'application/json')
-              .end(responseBody);
+            res.set('Content-Type', 'application/json').end(responseBody);
           })
           .catch(next);
-    });
+      },
+    );
 
-    if(this.options.config.accessTokenAuth !== true) {
-        app.post('/-/v1/login', express.json(), (req, res, next) => {
-          Promise.resolve()
-            .then(async () => {
-              const loginRequestId = await nanoid();
+    if (this.options.config.accessTokenAuth !== true) {
+      app.post('/-/v1/login', express.json(), (req, res, next) => {
+        Promise.resolve()
+          .then(async () => {
+            const loginRequestId = await nanoid();
 
-              res.set('Content-Type', 'application/json').end(
-                JSON.stringify({
-                  loginUrl: new URL(
-                    `oidc/login/${loginRequestId}`,
-                    this.options.config.publicUrl,
-                  ),
-                  doneUrl: new URL(
-                    `oidc/done/${loginRequestId}`,
-                    this.options.config.publicUrl,
-                  ),
-                }),
-              );
-            })
-            .catch(next);
-        });
+            res.set('Content-Type', 'application/json').end(
+              JSON.stringify({
+                loginUrl: new URL(
+                  `oidc/login/${loginRequestId}`,
+                  this.options.config.publicUrl,
+                ),
+                doneUrl: new URL(
+                  `oidc/done/${loginRequestId}`,
+                  this.options.config.publicUrl,
+                ),
+              }),
+            );
+          })
+          .catch(next);
+      });
     }
 
     app.get('/oidc/login/:loginRequestId', (req, res, next) => {
@@ -510,7 +517,11 @@ export default class OidcPlugin
           const loginRequestId = params.state;
           const sessionId = await nanoid();
 
-          const {npmToken, webToken} = await this.saveSessionAndCreateTokens(sessionId, tokenSet, auth);
+          const {npmToken, webToken} = await this.saveSessionAndCreateTokens(
+            sessionId,
+            tokenSet,
+            auth,
+          );
 
           await this.ts.set(`login:${loginRequestId}`, npmToken, 5 * 60);
 
@@ -542,15 +553,17 @@ export default class OidcPlugin
     });
   }
 
-  private unauthorized(res: Response, msg: string) : void {
-    this.logger.trace({msg},'Unauthorized access: @{msg}');
+  private unauthorized(res: Response, msg: string): void {
+    this.logger.trace({msg}, 'Unauthorized access: @{msg}');
     res.status(401);
-    res
-      .set('Content-Type', 'text/plain')
-      .end(msg);
+    res.set('Content-Type', 'text/plain').end(msg);
   }
 
-  private async saveSessionAndCreateTokens(sessionId: string, tokenSet: TokenSet, auth: IBasicAuth<OidcPluginConfig>): Promise<Tokens> {
+  private async saveSessionAndCreateTokens(
+    sessionId: string,
+    tokenSet: TokenSet,
+    auth: IBasicAuth<OidcPluginConfig>,
+  ): Promise<Tokens> {
     await this.saveSession(sessionId, tokenSet);
     const username = this.getUsername(tokenSet);
     const userroles = this.getRoles(tokenSet);
@@ -569,14 +582,12 @@ export default class OidcPlugin
           sid: sessionId,
         };
         npmToken = await signPayload(rUser, auth.config.secret, {
-          expiresIn:
-            this.options.config.security?.api?.jwt?.sign?.expiresIn,
+          expiresIn: this.options.config.security?.api?.jwt?.sign?.expiresIn,
         });
         webToken = await signPayload(rUser, auth.config.secret, {
           // default expiration for web tokens is 7 days:
           // https://github.com/verdaccio/verdaccio/blob/64f0921477ef68fc96a2327c7a3c86a45f6d0255/packages/config/src/security.ts#L5-L11
-          expiresIn:
-            this.options.config.security?.web?.sign?.expiresIn ?? '7d',
+          expiresIn: this.options.config.security?.web?.sign?.expiresIn ?? '7d',
         });
         break;
       default:

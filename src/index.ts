@@ -161,8 +161,8 @@ export default class OidcPlugin
     ).then(
       issuer =>
         new issuer.Client({
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret,
+          client_id: process.env.OIDC_CLIENT_ID || this.config.clientId,
+          client_secret: process.env.OIDC_CLIENT_SECRET || this.config.clientSecret,
           redirect_uris: [
             new URL('oidc/callback', this.config.publicUrl).toString(),
           ],
@@ -425,15 +425,13 @@ export default class OidcPlugin
               this.unauthorized(res, 'User ID in URL and body do not match.');
               return;
             }
-            const clientSecret = plugin.config.clientSecret;
-            const clientId = plugin.config.clientId;
             const client = await plugin.clientPromise;
             let tokenSet = await client.grant({
               grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
               'requested_token_type ':
                 'urn:ietf:params:oauth:token-type:refresh_token',
-              client_secret: clientSecret,
-              client_id: clientId,
+              client_id: process.env.OIDC_CLIENT_ID || plugin.config.clientId,
+              client_secret: process.env.OIDC_CLIENT_SECRET || plugin.config.clientSecret,
               subject_token: subjectToken,
               subject_token_type:
                 'urn:ietf:params:oauth:token-type:access_token',

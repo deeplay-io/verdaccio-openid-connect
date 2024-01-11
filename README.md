@@ -3,7 +3,7 @@
 Verdaccio authentication plugin for OpenID Connect. When installed,
 `npm login --registry ...` command will open the browser to start login flow.
 
-Compatible with Verdaccio 4.x and 5.x.
+Compatible with Verdaccio 4.x, 5.x and 6.x.
 
 ## Installation
 
@@ -26,9 +26,11 @@ auth:
     #fsTokenStorePath: /tmp
     # OpenID Connect Issuer URL
     issuer: https://keycloak/auth/realms/MyRealm/
-    # OpenID Connect Client ID
+    # OpenID Connect Client ID.
+    # Alternatively can be set via environment variable OIDC_CLIENT_ID
     clientId: verdaccio
-    # OpenID Connect Client Secret
+    # OpenID Connect Client Secret.
+    # Alternatively can be set via environment variable OIDC_CLIENT_SECRET
     clientSecret: '...'
     # OpenID Connect Scopes
     scope: openid profile email offline_access

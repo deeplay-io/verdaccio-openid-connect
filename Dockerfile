@@ -1,18 +1,20 @@
-FROM node:12 as builder
+ARG VERDACCIO_VERSION=5.31.0
+FROM verdaccio/verdaccio:${VERDACCIO_VERSION} as base
 
+FROM base as builder
+USER root
 WORKDIR /opt/build
 
-COPY package.json yarn.lock ./
-RUN yarn
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src src
+RUN npm run build
 
-RUN yarn build
+FROM base as final
 
-FROM verdaccio/verdaccio:4.10.0
-
-COPY --from=builder /opt/build/package.json /verdaccio/plugins/verdaccio-openid-connect/package.json
+COPY --from=builder --chown=verdaccio:verdaccio /opt/build/package.json /verdaccio/plugins/verdaccio-openid-connect/package.json
 
 USER root
 RUN cd /verdaccio/plugins/verdaccio-openid-connect && env NODE_ENV=production npm i

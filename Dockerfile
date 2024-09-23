@@ -1,7 +1,7 @@
-ARG VERDACCIO_VERSION=5.31.0
-FROM verdaccio/verdaccio:${VERDACCIO_VERSION} as base
+ARG VERDACCIO_VERSION=6.0.0
+FROM verdaccio/verdaccio:${VERDACCIO_VERSION} AS base
 
-FROM base as builder
+FROM base AS builder
 USER root
 WORKDIR /opt/build
 
@@ -12,7 +12,7 @@ COPY tsconfig.json ./
 COPY src src
 RUN npm run build
 
-FROM base as final
+FROM base AS final
 
 COPY --from=builder --chown=verdaccio:verdaccio /opt/build/package.json /verdaccio/plugins/verdaccio-openid-connect/package.json
 

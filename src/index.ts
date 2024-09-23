@@ -46,12 +46,6 @@ type Tokens = {
 
 type RemoteUserEx = RemoteUser & {sid: string};
 
-enum PluginMode {
-  LEGACY,
-  JWT,
-}
-
-const UnsupportedPluginModeError = () => new Error('unsupported plugin mode');
 const TOKEN_BEARER = 'Bearer';
 
 export default class OidcPlugin
@@ -66,64 +60,38 @@ export default class OidcPlugin
   private logger!: Logger;
   private ss!: ISessionStorage;
   private ts!: ITokenStorage;
-  private mode!: PluginMode;
   private sessionTtl!: number;
 
   constructor(
     config: OidcPluginConfig,
-    options: PluginOptions<OidcPluginConfig>,
+    appOptions: PluginOptions<OidcPluginConfig>,
   ) {
     this.config = config;
-    this.options = options;
+    this.options = appOptions;
     if (this.config.oidcPluginInstance != null) {
       return this.options.config.oidcPluginInstance;
     }
     
     this.options.config.middlewares = {
-      ...options.config.middlewares,
+      ...appOptions.config.middlewares,
       'openid-connect': {oidcPluginInstance: this},
     };
-    this.logger = options.logger;
+    this.logger = appOptions.logger;
 
-    if (this.options.config.security?.api?.legacy) {
-      // Legacy property means that explicitly you want to use the legacy token system signature.
-      // You might not like to do not remove the whole security section in order to disable JWT
-      // and for such reason, this property exists.
-      this.mode = PluginMode.LEGACY;
-    } else {
-      this.mode = this.options.config.security?.api?.jwt
-        ? PluginMode.JWT
-        : PluginMode.LEGACY;
-    }
-
-    switch (this.mode) {
-      case PluginMode.LEGACY:
-        this.logger.trace(
-          {pluginName: this.pluginName},
-          '@{pluginName} in legacy mode',
-        );
-        this.apiJWTmiddleware = undefined;
-        this.sessionTtl = ms('30d');
-        break;
-      case PluginMode.JWT:
-        this.logger.trace(
-          {pluginName: this.pluginName},
-          '@{pluginName} in jwt mode',
-        );
-        this.apiJWTmiddleware = this._apiJWTmiddleware;
-        const sessionExpiresIn =
-          this.options.config.security?.api?.jwt?.sign?.expiresIn;
-        const sessionTtl =
-          sessionExpiresIn == null || sessionExpiresIn === 'never'
-            ? '30d'
-            : sessionExpiresIn;
-        this.sessionTtl = Number.isNaN(+sessionTtl)
-          ? ms(sessionTtl)
-          : +sessionTtl;
-        break;
-      default:
-        throw UnsupportedPluginModeError();
-    }
+    this.logger.trace(
+      {pluginName: this.pluginName},
+      '@{pluginName} in jwt mode',
+    );
+    this.apiJWTmiddleware = this._apiJWTmiddleware;
+    const sessionExpiresIn =
+      this.options.config.security?.api?.jwt?.sign?.expiresIn;
+    const sessionTtl =
+      sessionExpiresIn == null || sessionExpiresIn === 'never'
+        ? '30d'
+        : sessionExpiresIn;
+    this.sessionTtl = Number.isNaN(+sessionTtl)
+      ? ms(sessionTtl)
+      : +sessionTtl;
 
     if (this.config.redisUri) {
       const rs = NewRedisStorage(this.config.redisUri);
@@ -514,7 +482,6 @@ export default class OidcPlugin
             params,
             {
               state: params.state,
-              nonce: null!,
             },
           );
 
@@ -567,7 +534,6 @@ export default class OidcPlugin
     tokenSet: TokenSet,
     auth: IBasicAuth<OidcPluginConfig>,
   ): Promise<Tokens> {
-    let plugin = this.getInstance();
 
     await this.saveSession(sessionId, tokenSet);
     const username = this.getUsername(tokenSet);
@@ -575,30 +541,20 @@ export default class OidcPlugin
 
     let npmToken: string;
     let webToken: string;
-    switch (plugin.mode) {
-      case PluginMode.LEGACY:
-        npmToken = auth
-          .aesEncrypt(Buffer.from(`${username}:${sessionId}`, 'utf8'))
-          .toString('base64');
-        webToken = npmToken;
-        break;
-      case PluginMode.JWT:
-        const rUser = {
-          ...createRemoteUser(username, userroles),
-          sid: sessionId,
-        };
-        npmToken = await signPayload(rUser, auth.config.secret, {
-          expiresIn: this.options.config.security?.api?.jwt?.sign?.expiresIn,
-        });
-        webToken = await signPayload(rUser, auth.config.secret, {
-          // default expiration for web tokens is 7 days:
-          // https://github.com/verdaccio/verdaccio/blob/64f0921477ef68fc96a2327c7a3c86a45f6d0255/packages/config/src/security.ts#L5-L11
-          expiresIn: this.options.config.security?.web?.sign?.expiresIn ?? '7d',
-        });
-        break;
-      default:
-        throw UnsupportedPluginModeError();
-    }
+
+    const rUser = {
+      ...createRemoteUser(username, userroles),
+      sid: sessionId,
+    };
+    npmToken = await signPayload(rUser, auth.config.secret, {
+      expiresIn: this.options.config.security?.api?.jwt?.sign?.expiresIn,
+    });
+    webToken = await signPayload(rUser, auth.config.secret, {
+      // default expiration for web tokens is 7 days:
+      // https://github.com/verdaccio/verdaccio/blob/64f0921477ef68fc96a2327c7a3c86a45f6d0255/packages/config/src/security.ts#L5-L11
+      expiresIn: this.options.config.security?.web?.sign?.expiresIn ?? '7d',
+    });
+
     return {npmToken, webToken};
   }
 }

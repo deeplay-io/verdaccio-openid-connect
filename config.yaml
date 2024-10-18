@@ -5,11 +5,13 @@ plugins: /verdaccio/plugins
 
 auth:
   openid-connect:
+    # Verdaccio public URL. If served on a subpath, make sure to include a
+    # trailing slash.
     publicUrl: http://localhost:4873
 
-    ###
-    # when set redis storage (for sessions and tokens) will be used.
-    # see also: fs_session_store_path, fs_token_store_path.
+    # Redis hostname
+    # When set redis storage (for sessions and tokens) will be used.
+    # see also: fsSessionStorePath, fsTokenStorePath.
     redisUri: redis
 
     ###
@@ -17,10 +19,17 @@ auth:
     #fsSessionStorePath: /tmp
     #fsTokenStorePath: /tmp
 
+    # OpenID Connect Issuer URL
     issuer: https://keycloak/auth/realms/MyRealm/
+    # OpenID Connect Client ID.
+    # Alternatively can be set via environment variable OIDC_CLIENT_ID
     clientId: verdaccio
+    # OpenID Connect Client Secret.
+    # Alternatively can be set via environment variable OIDC_CLIENT_SECRET
     clientSecret: '...'
+    # OpenID Connect Scopes
     scope: 'openid profile email offline_access'
+    # Optional id_token claim that will be used for username
     usernameClaim: preferred_username
 
     # optional roles claim (id_token).

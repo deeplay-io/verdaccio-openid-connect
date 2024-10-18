@@ -11,37 +11,6 @@ Compatible with Verdaccio 4.x, 5.x and 6.x.
 
 ## Configuration
 
-```yaml
-auth:
-  openid-connect:
-    # Verdaccio public URL. If served on a subpath, make sure to include a
-    # trailing slash.
-    publicUrl: http://localhost:4873/
-    # Redis hostname
-    # When set redis storage (for sessions and tokens) will be used.
-    # see also: fsSessionStorePath, fsTokenStorePath.
-    redisUri: redis
-    # Session files (persistent) storage path and token files (temporary for short-lived files) storage path: will be used if redisUri not set
-    #fsSessionStorePath: /tmp
-    #fsTokenStorePath: /tmp
-    # OpenID Connect Issuer URL
-    issuer: https://keycloak/auth/realms/MyRealm/
-    # OpenID Connect Client ID.
-    # Alternatively can be set via environment variable OIDC_CLIENT_ID
-    clientId: verdaccio
-    # OpenID Connect Client Secret.
-    # Alternatively can be set via environment variable OIDC_CLIENT_SECRET
-    clientSecret: '...'
-    # OpenID Connect Scopes
-    scope: openid profile email offline_access
-    # Optional id_token claim that will be used for username
-    usernameClaim: preferred_username
-    # Optional switch to alternative login method, using access token as password.
-    # The username must be the same as the one used to acquire the access token,
-    # the password must be an OIDC access token. The e-mail address will be ignored.
-    # If not set, the regular authentication flow will be used.
-    accessTokenAuth: false
-```
+See sample configuration in [./config.yaml](config.yaml).
 
-OpenID Connect Client must be configured to allow `${publicUrl}/oidc/callback`
-as a redirect URI.
+Note: OpenID Connect Client must be configured to allow `${publicUrl}/oidc/callback` as a redirect URI.

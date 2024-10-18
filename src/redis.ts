@@ -1,4 +1,3 @@
-import IORedis = require('ioredis');
 import {ISessionStorage, ITokenStorage} from './types';
 import {Redis} from 'ioredis';
 import {createPool, Pool} from 'generic-pool';
@@ -109,10 +108,10 @@ class RedisSessionStorage implements ISessionStorage {
   }
 }
 
-function createRedis(uri: string): IORedis.Redis {
-  return new IORedis(uri, {
+function createRedis(uri: string): Redis {
+  return new Redis(uri, {
     lazyConnect: true,
-    retryStrategy: attempt => {
+    retryStrategy: (attempt: number) => {
       const baseMs = 100;
       const maxDelayMs = 10_000;
 
